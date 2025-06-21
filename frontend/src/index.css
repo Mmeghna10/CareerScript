@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Urbanist", sans-serif;
+  --breakpoint-3xl: 1920px;
+  --color-primary: #2DD4BF;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-display);
+  }
+
+  body {
+    background-color: #0F172A;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom scrollbar styling */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 100, 100, 0.4);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer utilities {
+  @keyframes text-shine {
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 100% 50%;
+    }
+  }
+
+  .animate-text-shine {
+    animation: text-shine 3s ease-in-out alternate;
+  }
+}
+
+.input-box {
+  @apply w-full flex justify-between gap-3 text-sm text-white bg-gray-800/50 backdrop-blur-sm rounded-lg px-4 py-3 mb-4 mt-3 border border-gray-600 outline-none focus-within:border-purple-500 placeholder-gray-400;
+}
+
+.btn-primary {
+  @apply w-full text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-purple-500/25 p-[10px] rounded-lg my-1 hover:from-blue-700 hover:to-purple-700 hover:scale-105 transform transition-all duration-200 cursor-pointer;
+}
+
+.btn-small {
+  @apply flex items-center gap-2 text-[13px] font-semibold text-white bg-gradient-to-r from-gray-800 to-gray-900 border border-gray-700/50 px-5 py-1.5 rounded-lg cursor-pointer hover:from-gray-700 hover:to-gray-800 hover:scale-105 transform transition-all duration-200 shadow-lg;
+}
+
+.btn-small-light {
+  @apply flex items-center gap-2 text-[12px] font-semibold text-gray-300 bg-gray-800/50 backdrop-blur-sm border border-gray-600/50 hover:border-gray-500 hover:bg-gray-700/50 hover:text-white px-3 py-1.5 rounded-lg cursor-pointer transform hover:scale-105 transition-all duration-200;
+}
+
+.form-input {
+  @apply w-full text-sm text-white outline-none bg-gray-800/50 backdrop-blur-sm border border-gray-600 px-2.5 py-3 rounded-lg mt-2 placeholder:text-gray-400 focus-within:border-purple-500 hover:border-gray-500 transition-all duration-200;
+}
