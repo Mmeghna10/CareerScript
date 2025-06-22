@@ -16,37 +16,7 @@ const ProfileInfoCard = () => {
     navigate("/");
   };
 
-  // Function to get fallback avatar
-  const getFallbackAvatar = (name) => {
-    const initial = name ? name.charAt(0).toUpperCase() : "U";
-    // Using a data URL SVG instead of external placeholder service
-    return `data:image/svg+xml,%3csvg width='44' height='44' xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3clinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3e%3cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3e%3cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1' /%3e%3c/linearGradient%3e%3c/defs%3e%3crect width='44' height='44' fill='url(%23grad)' rx='22'/%3e%3ctext x='22' y='28' font-family='Arial, sans-serif' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3e${initial}%3c/text%3e%3c/svg%3e`;
-  };
-
-  // Function to process image URL for mixed content issues
-  const getSecureImageUrl = (url) => {
-    if (!url) return null;
-    
-    // If it's already a data URL or HTTPS, return as is
-    if (url.startsWith('data:') || url.startsWith('https:')) {
-      return url;
-    }
-    
-    // If it's HTTP localhost and we're on HTTPS, it won't work
-    if (url.startsWith('http://localhost') && window.location.protocol === 'https:') {
-      console.warn('Mixed content detected - HTTP image on HTTPS site:', url);
-      return null; // Will fallback to default avatar
-    }
-    
-    // For other HTTP URLs, try to convert to HTTPS
-    if (url.startsWith('http://')) {
-      return url.replace('http://', 'https://');
-    }
-    
-    return url;
-  };
-
-  // Show loading state or nothing if no user
+  // Show loading state if no user (FIXED: removed duplicate)
   if (!user) {
     console.log('ProfileInfoCard - No user found');
     return (
@@ -68,6 +38,7 @@ const ProfileInfoCard = () => {
               0 0 0 1px rgba(255, 255, 255, 0.1),
               inset 0 1px 0 rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
           }
           
           .loading-avatar {
@@ -92,27 +63,35 @@ const ProfileInfoCard = () => {
               opacity: 0.5;
             }
           }
+          
+          @keyframes slideInRight {
+            from {
+              transform: translateX(30px);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
         `}</style>
       </div>
     );
   }
-
-  const secureImageUrl = getSecureImageUrl(user.profileImageUrl);
-  const fallbackAvatar = getFallbackAvatar(user.name || user.email);
    
   return (
     <div className="profile-card">
       <div className="profile-avatar-container">
         <img
-          src={secureImageUrl || fallbackAvatar}
+          src={user.profileImageUrl || "/default-avatar.png"}
           alt={user.name || "User"}
           className="profile-avatar"
           onError={(e) => {
-            console.log('Image failed to load, using fallback');
-            e.target.src = fallbackAvatar;
+            console.log('Avatar image failed to load, using fallback');
+            e.target.src = "https://via.placeholder.com/44/FFFFFF/667eea?text=U";
           }}
           onLoad={() => {
-            console.log('Profile image loaded successfully');
+            console.log('Avatar image loaded successfully');
           }}
         />
         <div className="avatar-ring"></div>
@@ -131,7 +110,8 @@ const ProfileInfoCard = () => {
         </button>
       </div>
       
-      <style jsx="true">{`
+      {/* FIXED: Removed = "true" */}
+      <style jsx>{`
         .profile-card {
           display: flex;
           align-items: center;
@@ -148,6 +128,7 @@ const ProfileInfoCard = () => {
           transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           position: relative;
           overflow: hidden;
+          animation: slideInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
         }
         
         .profile-card::before {
@@ -326,11 +307,6 @@ const ProfileInfoCard = () => {
           }
         }
         
-        /* Animation for initial load */
-        .profile-card {
-          animation: slideInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-        }
-        
         @keyframes slideInRight {
           from {
             transform: translateX(30px);
@@ -370,11 +346,6 @@ const ProfileInfoCard = () => {
           .logout-button {
             color: #ffffff;
           }
-        }
-        
-        /* Loading state improvements */
-        .profile-card-loading {
-          animation: slideInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
         }
       `}</style>
     </div>
