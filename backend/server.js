@@ -12,22 +12,38 @@ const app = express();
 // Connect Database
 connectDB();
 
-// Add this before your CORS middleware for debugging
-app.use((req, res, next) => {
-    console.log('Origin:', req.headers.origin);
-    console.log('CLIENT_URL:', process.env.CLIENT_URL);
-    next();
-});
+const allowedOrigins = [
+    'http://localhost:5173',
+    'https://career-script.vercel.app',
+    // Add pattern for Vercel preview deployments
+    /^https:\/\/career-script.*\.vercel\.app$/
+];
 
-//Middleware to handle Cors
 app.use(
     cors({
-        origin: process.env.CLIENT_URL || "http://localhost:5173",
+        origin: function (origin, callback) {
+            // Allow requests with no origin (mobile apps, Postman, etc.)
+            if (!origin) return callback(null, true);
+            
+            // Check if origin matches any allowed pattern
+            const isAllowed = allowedOrigins.some(allowed => {
+                if (typeof allowed === 'string') {
+                    return allowed === origin;
+                } else if (allowed instanceof RegExp) {
+                    return allowed.test(origin);
+                }
+                return false;
+            });
+            
+            if (isAllowed) {
+                callback(null, true);
+            } else {
+                callback(new Error('Not allowed by CORS'));
+            }
+        },
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
-        credentials: true, // Add this if you're sending cookies/auth tokens
-        preflightContinue: false,
-        optionsSuccessStatus: 200
+        credentials: true
     })
 );
 
