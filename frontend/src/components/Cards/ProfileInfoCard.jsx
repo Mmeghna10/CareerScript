@@ -16,6 +16,36 @@ const ProfileInfoCard = () => {
     navigate("/");
   };
 
+  // Function to get fallback avatar
+  const getFallbackAvatar = (name) => {
+    const initial = name ? name.charAt(0).toUpperCase() : "U";
+    // Using a data URL SVG instead of external placeholder service
+    return `data:image/svg+xml,%3csvg width='44' height='44' xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3clinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3e%3cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3e%3cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1' /%3e%3c/linearGradient%3e%3c/defs%3e%3crect width='44' height='44' fill='url(%23grad)' rx='22'/%3e%3ctext x='22' y='28' font-family='Arial, sans-serif' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3e${initial}%3c/text%3e%3c/svg%3e`;
+  };
+
+  // Function to process image URL for mixed content issues
+  const getSecureImageUrl = (url) => {
+    if (!url) return null;
+    
+    // If it's already a data URL or HTTPS, return as is
+    if (url.startsWith('data:') || url.startsWith('https:')) {
+      return url;
+    }
+    
+    // If it's HTTP localhost and we're on HTTPS, it won't work
+    if (url.startsWith('http://localhost') && window.location.protocol === 'https:') {
+      console.warn('Mixed content detected - HTTP image on HTTPS site:', url);
+      return null; // Will fallback to default avatar
+    }
+    
+    // For other HTTP URLs, try to convert to HTTPS
+    if (url.startsWith('http://')) {
+      return url.replace('http://', 'https://');
+    }
+    
+    return url;
+  };
+
   // Show loading state or nothing if no user
   if (!user) {
     console.log('ProfileInfoCard - No user found');
@@ -66,17 +96,20 @@ const ProfileInfoCard = () => {
       </div>
     );
   }
+
+  const secureImageUrl = getSecureImageUrl(user.profileImageUrl);
+  const fallbackAvatar = getFallbackAvatar(user.name || user.email);
    
   return (
     <div className="profile-card">
       <div className="profile-avatar-container">
         <img
-          src={user.profileImageUrl || "/default-avatar.png"}
+          src={secureImageUrl || fallbackAvatar}
           alt={user.name || "User"}
           className="profile-avatar"
           onError={(e) => {
-            // Fixed: Use a proper default image or data URL instead of problematic placeholder
-            e.target.src = "data:image/svg+xml,%3csvg width='44' height='44' xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3clinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3e%3cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3e%3cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1' /%3e%3c/linearGradient%3e%3c/defs%3e%3crect width='44' height='44' fill='url(%23grad)' rx='22'/%3e%3ctext x='22' y='28' font-family='Arial, sans-serif' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3eU%3c/text%3e%3c/svg%3e";
+            console.log('Image failed to load, using fallback');
+            e.target.src = fallbackAvatar;
           }}
           onLoad={() => {
             console.log('Profile image loaded successfully');
@@ -98,7 +131,7 @@ const ProfileInfoCard = () => {
         </button>
       </div>
       
-      <style jsx = "true">{`
+      <style jsx="true">{`
         .profile-card {
           display: flex;
           align-items: center;
