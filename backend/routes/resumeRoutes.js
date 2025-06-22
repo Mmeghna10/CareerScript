@@ -7,7 +7,7 @@ const {
     deleteResume,
 } = require("../controllers/resumeController");
 const { protect } = require("../middleware/authMiddleware");
-const { uploadResumeImages, uploadResumeImagesMiddleware } = require("../controllers/uploadImages");
+const { uploadResumeImages} = require("../controllers/uploadImages");
 
 const router = express.Router();
 
@@ -15,13 +15,7 @@ router.post("/", protect, createResume);
 router.get("/", protect, getUserResume);
 router.get("/:id", protect, getResumeById);
 router.put("/:id", protect, updateResume);
-
-// FIXED: Added the multer middleware before the controller
-router.put("/:id/upload-images", 
-    protect, // Authentication middleware
-    uploadResumeImagesMiddleware, // Multer middleware for file handling
-    uploadResumeImages // Controller function
-);
+router.put("/:id/upload-images", protect, uploadResumeImages);
 
 router.delete("/:id", protect, deleteResume);
 
