@@ -1,4 +1,5 @@
-export const BASE_URL = "http://localhost:8000";
+/* eslint-disable no-undef */
+export const BASE_URL = process.env.VITE_API_URL || "https://careerscript.onrender.com";
 
 export const API_PATHS = {
     AUTH: {
