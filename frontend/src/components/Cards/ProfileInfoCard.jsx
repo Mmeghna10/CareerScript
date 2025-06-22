@@ -1,13 +1,70 @@
-import React, { useContext } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/userContext";
 
 const ProfileInfoCard = () => {
   const { user, clearUser } = useContext(UserContext);
   const navigate = useNavigate();
+  const [avatarSrc, setAvatarSrc] = useState("/default-avatar.png");
+  const [imageLoadError, setImageLoadError] = useState(false);
   
   // Debug log to check user data
   console.log('ProfileInfoCard - User data:', user);
+
+  // Handle image URL changes
+  useEffect(() => {
+    if (user?.profileImageUrl) {
+      // Validate and sanitize the image URL
+      const sanitizedUrl = sanitizeImageUrl(user.profileImageUrl);
+      if (sanitizedUrl) {
+        setAvatarSrc(sanitizedUrl);
+        setImageLoadError(false);
+      } else {
+        console.warn('Invalid profile image URL:', user.profileImageUrl);
+        setAvatarSrc(getDefaultAvatar(user));
+        setImageLoadError(true);
+      }
+    } else {
+      setAvatarSrc(getDefaultAvatar(user));
+    }
+  }, [user?.profileImageUrl, user?.name, user?.email]);
+
+  // Sanitize image URL
+  const sanitizeImageUrl = (url) => {
+    if (!url || typeof url !== 'string') return null;
+    
+    // Handle localhost URLs in development
+    if (url.includes('localhost:') && !url.startsWith('http')) {
+      return `http://localhost:8000${url.startsWith('/') ? '' : '/'}${url}`;
+    }
+    
+    // Check if it's a valid URL
+    try {
+      new URL(url);
+      return url;
+    } catch {
+      return null;
+    }
+  };
+
+  // Generate default avatar with initials
+  const getDefaultAvatar = (userData) => {
+    if (!userData) return "/default-avatar.png";
+    
+    const name = userData.name || userData.email || "User";
+    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    
+    // Create a simple colored background based on the name
+    const colors = [
+      '667eea', '764ba2', 'f093fb', 'f5576c', 
+      '4ecdc4', '44a08d', '667eea', 'f093fb'
+    ];
+    const colorIndex = name.length % colors.length;
+    const bgColor = colors[colorIndex];
+    
+    // Use a more reliable avatar service
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=${bgColor}&color=ffffff&size=44&rounded=true&bold=true`;
+  };
 
   // Memoized logout handler
   const handleLogout = () => {
@@ -16,17 +73,25 @@ const ProfileInfoCard = () => {
     navigate("/");
   };
 
-  // Show loading state or nothing if no user
-  if (!user) {
-    console.log('ProfileInfoCard - No user found');
-    return (
-      <div className="flex items-center space-x-3 p-2 bg-gray-700 rounded-lg shadow-sm">
-        <div className="w-11 h-11 bg-gray-400 rounded-full animate-pulse"></div>
-        <div className="text-white text-sm">Loading...</div>
-      </div>
-    );
-  }
- // Show loading state or nothing if no user
+  // Handle image load error
+  const handleImageError = (e) => {
+    console.log('Avatar image failed to load, using fallback');
+    if (!imageLoadError) {
+      setImageLoadError(true);
+      const fallbackSrc = getDefaultAvatar(user);
+      if (e.target.src !== fallbackSrc) {
+        e.target.src = fallbackSrc;
+      }
+    }
+  };
+
+  // Handle successful image load
+  const handleImageLoad = () => {
+    console.log('Avatar image loaded successfully');
+    setImageLoadError(false);
+  };
+
+  // Show loading state if no user
   if (!user) {
     console.log('ProfileInfoCard - No user found');
     return (
@@ -48,6 +113,7 @@ const ProfileInfoCard = () => {
               0 0 0 1px rgba(255, 255, 255, 0.1),
               inset 0 1px 0 rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
           }
           
           .loading-avatar {
@@ -72,6 +138,17 @@ const ProfileInfoCard = () => {
               opacity: 0.5;
             }
           }
+          
+          @keyframes slideInRight {
+            from {
+              transform: translateX(30px);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
         `}</style>
       </div>
     );
@@ -81,14 +158,18 @@ const ProfileInfoCard = () => {
     <div className="profile-card">
       <div className="profile-avatar-container">
         <img
-          src={user.profileImageUrl || "/default-avatar.png"}
+          src={avatarSrc}
           alt={user.name || "User"}
           className="profile-avatar"
-          onError={(e) => {
-            e.target.src = "https://via.placeholder.com/44/667eea/FFFFFF?text=U";
-          }}
+          onError={handleImageError}
+          onLoad={handleImageLoad}
         />
         <div className="avatar-ring"></div>
+        {imageLoadError && (
+          <div className="avatar-error-indicator" title="Image failed to load">
+            ⚠️
+          </div>
+        )}
       </div>
              
       <div className="profile-info">
@@ -104,7 +185,7 @@ const ProfileInfoCard = () => {
         </button>
       </div>
       
-      <style jsx = "true">{`
+      <style jsx>{`
         .profile-card {
           display: flex;
           align-items: center;
@@ -121,6 +202,7 @@ const ProfileInfoCard = () => {
           transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           position: relative;
           overflow: hidden;
+          animation: slideInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
         }
         
         .profile-card::before {
@@ -159,6 +241,7 @@ const ProfileInfoCard = () => {
           transition: all 0.3s ease;
           position: relative;
           z-index: 1;
+          background: rgba(255, 255, 255, 0.1);
         }
         
         .avatar-ring {
@@ -172,6 +255,22 @@ const ProfileInfoCard = () => {
           opacity: 0;
           transition: opacity 0.3s ease;
           pointer-events: none;
+        }
+        
+        .avatar-error-indicator {
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          width: 16px;
+          height: 16px;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 8px;
+          z-index: 2;
+          cursor: help;
         }
         
         .profile-card:hover .avatar-ring {
@@ -299,11 +398,6 @@ const ProfileInfoCard = () => {
           }
         }
         
-        /* Animation for initial load */
-        .profile-card {
-          animation: slideInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-        }
-        
         @keyframes slideInRight {
           from {
             transform: translateX(30px);
@@ -343,11 +437,6 @@ const ProfileInfoCard = () => {
           .logout-button {
             color: #ffffff;
           }
-        }
-        
-        /* Loading state improvements */
-        .profile-card-loading {
-          animation: slideInRight 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
         }
       `}</style>
     </div>
