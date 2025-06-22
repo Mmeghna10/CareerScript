@@ -20,16 +20,6 @@ const ProfileInfoCard = () => {
   if (!user) {
     console.log('ProfileInfoCard - No user found');
     return (
-      <div className="flex items-center space-x-3 p-2 bg-gray-700 rounded-lg shadow-sm">
-        <div className="w-11 h-11 bg-gray-400 rounded-full animate-pulse"></div>
-        <div className="text-white text-sm">Loading...</div>
-      </div>
-    );
-  }
- // Show loading state or nothing if no user
-  if (!user) {
-    console.log('ProfileInfoCard - No user found');
-    return (
       <div className="profile-card-loading">
         <div className="loading-avatar"></div>
         <div className="loading-text">Loading...</div>
@@ -85,7 +75,11 @@ const ProfileInfoCard = () => {
           alt={user.name || "User"}
           className="profile-avatar"
           onError={(e) => {
-            e.target.src = "https://via.placeholder.com/44/FFFFFF/667eea?text=U";
+            // Fixed: Use a proper default image or data URL instead of problematic placeholder
+            e.target.src = "data:image/svg+xml,%3csvg width='44' height='44' xmlns='http://www.w3.org/2000/svg'%3e%3cdefs%3e%3clinearGradient id='grad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3e%3cstop offset='0%25' style='stop-color:%23667eea;stop-opacity:1' /%3e%3cstop offset='100%25' style='stop-color:%23764ba2;stop-opacity:1' /%3e%3c/linearGradient%3e%3c/defs%3e%3crect width='44' height='44' fill='url(%23grad)' rx='22'/%3e%3ctext x='22' y='28' font-family='Arial, sans-serif' font-size='18' font-weight='bold' fill='white' text-anchor='middle'%3eU%3c/text%3e%3c/svg%3e";
+          }}
+          onLoad={() => {
+            console.log('Profile image loaded successfully');
           }}
         />
         <div className="avatar-ring"></div>
