@@ -1,106 +1,91 @@
+/* eslint-disable no-undef */
 import React, { useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { UserContext } from "../../context/userContext";
 
+// Base URL for API and image hosting
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 const ProfileInfoCard = () => {
   const { user, clearUser } = useContext(UserContext);
   const navigate = useNavigate();
-  const [avatarSrc, setAvatarSrc] = useState("/default-avatar.png");
+  const [avatarSrc, setAvatarSrc] = useState(getDefaultAvatar());
   const [imageLoadError, setImageLoadError] = useState(false);
-  
-  // Debug log to check user data
-  console.log('ProfileInfoCard - User data:', user);
 
-  // Handle image URL changes
+  // Load and set avatar URL on user change
   useEffect(() => {
     if (user?.profileImageUrl) {
-      // Validate and sanitize the image URL
-      const sanitizedUrl = sanitizeImageUrl(user.profileImageUrl);
-      if (sanitizedUrl) {
-        setAvatarSrc(sanitizedUrl);
-        setImageLoadError(false);
-      } else {
-        console.warn('Invalid profile image URL:', user.profileImageUrl);
-        setAvatarSrc(getDefaultAvatar(user));
-        setImageLoadError(true);
-      }
+      const url = user.profileImageUrl.startsWith("/")
+        ? `${API_BASE}${user.profileImageUrl}`
+        : user.profileImageUrl;
+      setAvatarSrc(url);
+      setImageLoadError(false);
     } else {
       setAvatarSrc(getDefaultAvatar(user));
     }
-  }, [user?.profileImageUrl, user?.name, user?.email]);
+  }, [user]);
 
-  // Sanitize image URL
-  const sanitizeImageUrl = (url) => {
-    if (!url || typeof url !== 'string') return null;
-    
-    // Handle localhost URLs in development
-    if (url.includes('localhost:') && !url.startsWith('http')) {
-      return `http://localhost:8000${url.startsWith('/') ? '' : '/'}${url}`;
-    }
-    
-    // Check if it's a valid URL
-    try {
-      new URL(url);
-      return url;
-    } catch {
-      return null;
-    }
-  };
+  // Generate a default avatar based on initials
+  function getDefaultAvatar(userData = {}) {
+    const base = "https://ui-avatars.com/api/";
+    const nameOrEmail = userData.name || userData.email || "User";
+    const initials = nameOrEmail
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
 
-  // Generate default avatar with initials
-  const getDefaultAvatar = (userData) => {
-    if (!userData) return "/default-avatar.png";
-    
-    const name = userData.name || userData.email || "User";
-    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    
-    // Create a simple colored background based on the name
     const colors = [
-      '667eea', '764ba2', 'f093fb', 'f5576c', 
-      '4ecdc4', '44a08d', '667eea', 'f093fb'
+      "667eea",
+      "764ba2",
+      "f093fb",
+      "f5576c",
+      "4ecdc4",
+      "44a08d",
+      "667eea",
+      "f093fb",
     ];
-    const colorIndex = name.length % colors.length;
-    const bgColor = colors[colorIndex];
-    
-    // Use a more reliable avatar service
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&background=${bgColor}&color=ffffff&size=44&rounded=true&bold=true`;
+    const bgColor = colors[nameOrEmail.length % colors.length];
+
+    const params = new URLSearchParams({
+      name: initials,
+      background: bgColor,
+      color: "ffffff",
+      size: "44",
+      rounded: "true",
+      bold: "true",
+    });
+
+    return `${base}?${params.toString()}`;
+  }
+
+  // Fallback on image load error
+  const handleImageError = (e) => {
+    if (!imageLoadError) {
+      setImageLoadError(true);
+      e.currentTarget.src = getDefaultAvatar(user);
+    }
   };
 
-  // Memoized logout handler
+  // Clear error when image loads
+  const handleImageLoad = () => {
+    setImageLoadError(false);
+  };
+
   const handleLogout = () => {
     localStorage.clear();
     clearUser();
     navigate("/");
   };
 
-  // Handle image load error
-  const handleImageError = (e) => {
-    console.log('Avatar image failed to load, using fallback');
-    if (!imageLoadError) {
-      setImageLoadError(true);
-      const fallbackSrc = getDefaultAvatar(user);
-      if (e.target.src !== fallbackSrc) {
-        e.target.src = fallbackSrc;
-      }
-    }
-  };
-
-  // Handle successful image load
-  const handleImageLoad = () => {
-    console.log('Avatar image loaded successfully');
-    setImageLoadError(false);
-  };
-
-  // Show loading state if no user
   if (!user) {
-    console.log('ProfileInfoCard - No user found');
     return (
       <div className="profile-card-loading">
-        <div className="loading-avatar"></div>
+        <div className="loading-avatar" />
         <div className="loading-text">Loading...</div>
-        
-        <style jsx>{`
-          .profile-card-loading {
+        <style jsx>{` 
+        .profile-card-loading {
             display: flex;
             align-items: center;
             gap: 0.75rem;
@@ -149,11 +134,11 @@ const ProfileInfoCard = () => {
               opacity: 1;
             }
           }
-        `}</style>
+        } `}</style>
       </div>
     );
   }
-   
+
   return (
     <div className="profile-card">
       <div className="profile-avatar-container">
@@ -164,27 +149,20 @@ const ProfileInfoCard = () => {
           onError={handleImageError}
           onLoad={handleImageLoad}
         />
-        <div className="avatar-ring"></div>
         {imageLoadError && (
           <div className="avatar-error-indicator" title="Image failed to load">
             ⚠️
           </div>
         )}
       </div>
-             
+
       <div className="profile-info">
-        <div className="profile-name">
-          {user.name || user.email || "User"}
-        </div>
-        <button
-          type="button"
-          className="logout-button"
-          onClick={handleLogout}
-        >
+        <div className="profile-name">{user.name || user.email || "User"}</div>
+        <button className="logout-button" onClick={handleLogout}>
           Logout
         </button>
       </div>
-      
+
       <style jsx>{`
         .profile-card {
           display: flex;
@@ -438,6 +416,7 @@ const ProfileInfoCard = () => {
             color: #ffffff;
           }
         }
+      }
       `}</style>
     </div>
   );
