@@ -1,47 +1,26 @@
 const multer = require("multer");
-const path = require("path");
 
-// Ensure uploads directory exists
-const fs = require('fs');
-const uploadsDir = 'uploads/';
-if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-}
+// config storage
 
-// Config storage
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
     },
-    filename: (req, file, cb) => {
-        // Add file extension validation
-        const ext = path.extname(file.originalname);
-        const basename = path.basename(file.originalname, ext);
-        cb(null, `${Date.now()}-${basename}${ext}`);
+    filename: (req,file,cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
     },
 });
 
-// File filter with better validation
+// file filter
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
-    
-    const fileExtension = path.extname(file.originalname).toLowerCase();
-    
-    if (allowedTypes.includes(file.mimetype) && allowedExtensions.includes(fileExtension)) {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if(allowedTypes.includes(file.mimetype)){
         cb(null, true);
-    } else {
-        cb(new Error('Only .jpeg, .jpg, .png and .webp formats are allowed'), false);
-    }
+        }else{
+            cb(new Error('Only .jpeg, .jpg and .png formats are allowwed'), false);
+        }
 };
 
-const upload = multer({
-    storage,
-    fileFilter,
-    limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB limit
-        files: 2 // Maximum 2 files
-    }
-});
+const upload = multer({storage, fileFilter});
 
 module.exports = upload;
